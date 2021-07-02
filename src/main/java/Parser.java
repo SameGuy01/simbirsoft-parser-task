@@ -10,14 +10,14 @@ import java.util.regex.Pattern;
 public class Parser {
     public void parse(){
         try {
-            Document documentHtml = Jsoup.connect("https://www.google.com/")
+            Document documentHtml = Jsoup.connect("https://www.simbirsoft.com/")
                     .userAgent("Chrome/81.0.4044.138")
                     .get();
 
             String htmlText = documentHtml.text();
-           // System.out.println(documentHtml.body().html().replaceAll(">([^<]*)<", ""));
-           // System.out.println(getPageAsList(htmlText));
-            System.out.println(wordCountMap(getPageAsList(htmlText)));
+            //System.out.println(documentHtml.text().replaceAll(">([^<]*)<", ""));
+           // System.out.println(documentHtml.text().replaceAll(">([^<]*)<", ""));
+            System.out.println(wordCountMap(getPageAsList(documentHtml.text().replaceAll(">([^<]*)<", ""))));
         } catch (IOException e) {
             e.printStackTrace();
         }
