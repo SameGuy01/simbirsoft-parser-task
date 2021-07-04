@@ -7,6 +7,10 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Класс для установления соединения с определнным URL и последующей отправкой GET запроса на него.
+ * Используется библиотека Jsoup, т.к. она является наиболее простой и понятной.
+ * */
 public class UrlConnector {
     static Logger LOGGER = Logger.getLogger(UrlConnector.class.getName());
 

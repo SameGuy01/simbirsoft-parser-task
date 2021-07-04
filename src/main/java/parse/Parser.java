@@ -17,19 +17,25 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Главный класс содержащий всю логику парсинга сайта.
+ * Метод 'parse()' запускает весь процесс:
+ *                              - парсинг определенного url сайта
+ *                              - процесс логирования в консоль и в файл
+ *                              - сохранение информации в базу данных H2
+ * */
 public class Parser {
     static Logger LOGGER = Logger.getLogger(Parser.class.getName());
 
+    //основной метод парсинга
     public void parse(){
         try {
+            FileInputStream ins = new FileInputStream((Paths.get("").toAbsolutePath()+"\\src\\main\\log.config"));
             UrlConnector connector = new UrlConnector();
             H2Connection h2Connection = new H2Connection();
 
-            h2Connection.prepareTable();
-
-            FileInputStream ins = new FileInputStream((Paths.get("").toAbsolutePath()+"\\src\\main\\log.config"));
-
             LogManager.getLogManager().readConfiguration(ins);
+            h2Connection.prepareTable();
 
             Document documentHtml = connector.connect("https://www.simbirsoft.com/");
 
@@ -53,11 +59,14 @@ public class Parser {
         }
     }
 
+    //сохранение в базу данных
     public void saveToDb(Map<String,Integer> wordMap, H2Connection h2Connection) throws SQLException {
         for (Map.Entry<String, Integer> entry : wordMap.entrySet()){
             h2Connection.fillTable(entry.getKey(),entry.getValue(),h2Connection);
         }
     }
+
+    //подсчет повторений
     public Map<String,Integer> wordCountMap(List<String> textList){
         LOGGER.log(Level.INFO,"Запуск подсчета повторений слов...");
         Map<String,Integer> wordsMap = new HashMap<>();
@@ -75,6 +84,7 @@ public class Parser {
         return wordsMap;
     }
 
+    //получение строки в виде массива отдельных слов
     public List<String> getPageList(String text){
         LOGGER.log(Level.INFO,"Получение входного текста в виде массива ArrayList<String>...");
         List<String> pageList =  Arrays.asList(text.split(" "));
@@ -93,14 +103,16 @@ public class Parser {
         return pageList;
     }
 
+    //проверка на наличие символов
     public boolean containSymbols(String str){
-        Pattern p = Pattern.compile("[^a-zа-я0-9 ]", Pattern.CASE_INSENSITIVE);
+        Pattern p = Pattern.compile("[^a-zа-я]", Pattern.CASE_INSENSITIVE);
         Matcher m = p.matcher(str);
         return m.find();
     }
 
+    //перевод в обычное слово
     public String toSimpleWord(String str) {
-        return str.replaceAll("[^A-Za-zА-Яа-я0-9]", "");
+        return str.replaceAll("[^A-Za-zА-Яа-я]", "");
     }
 
 }
