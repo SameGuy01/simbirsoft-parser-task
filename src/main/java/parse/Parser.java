@@ -1,10 +1,12 @@
 package parse;
 
+import db.H2Connection;
 import org.jsoup.nodes.Document;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -16,11 +18,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Parser {
-    static Logger LOGGER = java.util.logging.Logger.getLogger(Parser.class.getName());
+    static Logger LOGGER = Logger.getLogger(Parser.class.getName());
 
     public void parse(){
         try {
             UrlConnector connector = new UrlConnector();
+            H2Connection h2Connection = new H2Connection();
+
+            h2Connection.prepareTable();
+
             FileInputStream ins = new FileInputStream((Paths.get("").toAbsolutePath()+"\\src\\main\\log.config"));
 
             LogManager.getLogManager().readConfiguration(ins);
@@ -28,22 +34,30 @@ public class Parser {
             Document documentHtml = connector.connect("https://www.simbirsoft.com/");
 
             LOGGER.log(Level.INFO,"Выполняем парсинг полученной html страницы...");
-
             Map<String,Integer> wordMap =
-                    wordCountMap(getPageAsList(documentHtml.text().replaceAll(">([^<]*)<", "")));
+                    wordCountMap(getPageList(documentHtml.text().replaceAll(">([^<]*)<", "")));
+
+            saveToDb(wordMap,h2Connection);
 
             LOGGER.log(Level.INFO,"Вывод информации в консоль...");
             wordMap.forEach((s, integer) -> System.out.println(s+" = "+integer));
+
+            //h2Connection.showTableInfo();
 
             LOGGER.log(Level.INFO,"Вывод выполнен.");
             LOGGER.log(Level.INFO,"Завершение программы.");
 
             ins.close();
-        } catch (IOException e) {
+        } catch (IOException | SQLException e) {
             e.printStackTrace();
         }
     }
 
+    public void saveToDb(Map<String,Integer> wordMap, H2Connection h2Connection) throws SQLException {
+        for (Map.Entry<String, Integer> entry : wordMap.entrySet()){
+            h2Connection.fillTable(entry.getKey(),entry.getValue(),h2Connection);
+        }
+    }
     public Map<String,Integer> wordCountMap(List<String> textList){
         LOGGER.log(Level.INFO,"Запуск подсчета повторений слов...");
         Map<String,Integer> wordsMap = new HashMap<>();
@@ -61,7 +75,7 @@ public class Parser {
         return wordsMap;
     }
 
-    public List<String> getPageAsList(String text){
+    public List<String> getPageList(String text){
         LOGGER.log(Level.INFO,"Получение входного текста в виде массива ArrayList<String>...");
         List<String> pageList =  Arrays.asList(text.split(" "));
 
