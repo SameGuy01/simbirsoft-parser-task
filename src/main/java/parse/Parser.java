@@ -7,10 +7,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -30,6 +27,7 @@ public class Parser {
     //основной метод парсинга
     public void parse(){
         try {
+            Scanner scanner = new Scanner(System.in);
             FileInputStream ins = new FileInputStream((Paths.get("").toAbsolutePath()+"\\src\\main\\log.config"));
             UrlConnector connector = new UrlConnector();
             H2Connection h2Connection = new H2Connection();
@@ -37,32 +35,35 @@ public class Parser {
             LogManager.getLogManager().readConfiguration(ins);
             h2Connection.prepareTable();
 
-            Document documentHtml = connector.connect("https://www.simbirsoft.com/");
+            System.out.println("Введите url: ");
+            String url = scanner.next();
+            Document documentHtml = connector.connect(url);
 
             LOGGER.log(Level.INFO,"Выполняем парсинг полученной html страницы...");
             Map<String,Integer> wordMap =
                     wordCountMap(getPageList(documentHtml.text().replaceAll(">([^<]*)<", "")));
 
-            saveToDb(wordMap,h2Connection);
+            saveToDb(wordMap,url,h2Connection);
 
             LOGGER.log(Level.INFO,"Вывод информации в консоль...");
             wordMap.forEach((s, integer) -> System.out.println(s+" = "+integer));
 
             //h2Connection.showTableInfo();
-
-            LOGGER.log(Level.INFO,"Вывод выполнен.");
             LOGGER.log(Level.INFO,"Завершение программы.");
 
             ins.close();
         } catch (IOException | SQLException e) {
+            if (e instanceof SQLException)
+                System.out.println("Проблемы с H2");
+
             e.printStackTrace();
         }
     }
 
     //сохранение в базу данных
-    public void saveToDb(Map<String,Integer> wordMap, H2Connection h2Connection) throws SQLException {
+    public void saveToDb(Map<String,Integer> wordMap,String url, H2Connection h2Connection) throws SQLException {
         for (Map.Entry<String, Integer> entry : wordMap.entrySet()){
-            h2Connection.fillTable(entry.getKey(),entry.getValue(),h2Connection);
+            h2Connection.fillTable(entry.getKey(),entry.getValue(),url,h2Connection);
         }
     }
 

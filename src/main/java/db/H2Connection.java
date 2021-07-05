@@ -25,14 +25,14 @@ public class H2Connection {
     }
 
     //заполнение таблицы определенными значениями
-    public void fillTable(String text, int count,H2Connection connection) throws SQLException {
+    public void fillTable(String text, int count,String url,H2Connection connection) throws SQLException {
         PreparedStatement statement = connection
                                         .getConnection()
                                         .prepareStatement("INSERT INTO HTML_STAT(word,count,site) VALUES (?,?,?)");
 
         statement.setString(1,text);
         statement.setInt(2,count);
-        statement.setString(3,"simbirsoft");
+        statement.setString(3,url);
 
         statement.execute();
     }
